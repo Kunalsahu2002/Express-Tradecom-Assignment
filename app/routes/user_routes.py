@@ -24,9 +24,9 @@ def create_user():
     Expects JSON body with 'name', 'email', 'role'.
     Returns 201 on success, 400 on validation error, 409 on duplicate email.
     """
-    json_data = request.get_json()
+    json_data = request.get_json(silent=True)
 
-    if not json_data:
+    if json_data is None:
         return error_response('Request body must be JSON', 400)
 
     # Validate input via Marshmallow schema

@@ -7,6 +7,10 @@ from .env by python-dotenv). Nothing is hardcoded.
 
 import os
 from urllib.parse import quote_plus
+from dotenv import load_dotenv
+
+# Load .env early so class-level attributes can read env vars at import time
+load_dotenv()
 
 
 class Config:

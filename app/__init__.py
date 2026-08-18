@@ -63,6 +63,9 @@ def _configure_logging(app):
 
 def _register_blueprints(app):
     """Register all route blueprints with the application."""
+    # Import models so Flask-Migrate/Alembic can detect them for migrations
+    from app.models import user  # noqa: F401
+
     from app.routes.health_routes import health_bp
     app.register_blueprint(health_bp)
 

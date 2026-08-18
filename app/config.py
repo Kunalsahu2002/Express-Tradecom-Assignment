@@ -6,6 +6,7 @@ from .env by python-dotenv). Nothing is hardcoded.
 """
 
 import os
+from urllib.parse import quote_plus
 
 
 class Config:
@@ -22,7 +23,7 @@ class Config:
     DB_NAME = os.environ.get('DB_NAME', 'users')
 
     SQLALCHEMY_DATABASE_URI = (
-        f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}"
+        f"mysql+pymysql://{DB_USER}:{quote_plus(DB_PASSWORD)}"
         f"@{DB_HOST}:{DB_PORT}/{DB_NAME}"
     )
 

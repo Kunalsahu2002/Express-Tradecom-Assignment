@@ -1,7 +1,7 @@
 """Tests for search and pagination functionality on GET /users."""
 
 
-def _seed_users(client, count=15):
+def _seed_users(client, auth_headers, count=15):
     """Helper to seed multiple users for pagination/search tests."""
     users = []
     for i in range(1, count + 1):
@@ -10,7 +10,7 @@ def _seed_users(client, count=15):
             'email': f'user{i}@example.com',
             'role': 'admin' if i % 3 == 0 else 'user',
         }
-        resp = client.post('/users', json=user)
+        resp = client.post('/users', json=user, headers=auth_headers)
         users.append(resp.get_json()['data'])
     return users
 
@@ -18,10 +18,10 @@ def _seed_users(client, count=15):
 class TestSearch:
     """Tests for the search query parameter."""
 
-    def test_search_by_name(self, client):
+    def test_search_by_name(self, client, auth_headers):
         """Search by partial name returns matching users only."""
-        client.post('/users', json={'name': 'Alice Johnson', 'email': 'alice@example.com', 'role': 'admin'})
-        client.post('/users', json={'name': 'Bob Smith', 'email': 'bob@example.com', 'role': 'user'})
+        client.post('/users', json={'name': 'Alice Johnson', 'email': 'alice@example.com', 'role': 'admin'}, headers=auth_headers)
+        client.post('/users', json={'name': 'Bob Smith', 'email': 'bob@example.com', 'role': 'user'}, headers=auth_headers)
 
         response = client.get('/users?search=alice')
         data = response.get_json()
@@ -30,10 +30,10 @@ class TestSearch:
         assert data['data']['total'] == 1
         assert data['data']['users'][0]['name'] == 'Alice Johnson'
 
-    def test_search_by_email(self, client):
+    def test_search_by_email(self, client, auth_headers):
         """Search by partial email returns matching users only."""
-        client.post('/users', json={'name': 'Alice', 'email': 'alice@domain.com', 'role': 'admin'})
-        client.post('/users', json={'name': 'Bob', 'email': 'bob@other.com', 'role': 'user'})
+        client.post('/users', json={'name': 'Alice', 'email': 'alice@domain.com', 'role': 'admin'}, headers=auth_headers)
+        client.post('/users', json={'name': 'Bob', 'email': 'bob@other.com', 'role': 'user'}, headers=auth_headers)
 
         response = client.get('/users?search=domain')
         data = response.get_json()
@@ -42,9 +42,9 @@ class TestSearch:
         assert data['data']['total'] == 1
         assert data['data']['users'][0]['email'] == 'alice@domain.com'
 
-    def test_search_no_results(self, client):
+    def test_search_no_results(self, client, auth_headers):
         """Search with no matches returns empty array, still 200."""
-        client.post('/users', json={'name': 'Alice', 'email': 'alice@example.com', 'role': 'admin'})
+        client.post('/users', json={'name': 'Alice', 'email': 'alice@example.com', 'role': 'admin'}, headers=auth_headers)
 
         response = client.get('/users?search=zzz-nomatch')
         data = response.get_json()
@@ -53,9 +53,9 @@ class TestSearch:
         assert data['data']['users'] == []
         assert data['data']['total'] == 0
 
-    def test_search_case_insensitive(self, client):
+    def test_search_case_insensitive(self, client, auth_headers):
         """Search is case-insensitive."""
-        client.post('/users', json={'name': 'Alice', 'email': 'alice@example.com', 'role': 'admin'})
+        client.post('/users', json={'name': 'Alice', 'email': 'alice@example.com', 'role': 'admin'}, headers=auth_headers)
 
         response = client.get('/users?search=ALICE')
         data = response.get_json()
@@ -67,9 +67,9 @@ class TestSearch:
 class TestPagination:
     """Tests for pagination query parameters."""
 
-    def test_default_pagination(self, client):
+    def test_default_pagination(self, client, auth_headers):
         """Without pagination params, defaults to page=1, limit=10."""
-        _seed_users(client, 15)
+        _seed_users(client, auth_headers, 15)
 
         response = client.get('/users')
         data = response.get_json()
@@ -81,9 +81,9 @@ class TestPagination:
         assert data['data']['total'] == 15
         assert data['data']['pages'] == 2
 
-    def test_custom_page_and_limit(self, client):
+    def test_custom_page_and_limit(self, client, auth_headers):
         """Custom page and limit return correct offset results."""
-        _seed_users(client, 15)
+        _seed_users(client, auth_headers, 15)
 
         response = client.get('/users?page=2&limit=5')
         data = response.get_json()
@@ -112,9 +112,9 @@ class TestPagination:
         assert response.status_code == 400
         assert data['success'] is False
 
-    def test_empty_page_beyond_range(self, client):
+    def test_empty_page_beyond_range(self, client, auth_headers):
         """Page beyond available data returns empty array, not 404."""
-        _seed_users(client, 5)
+        _seed_users(client, auth_headers, 5)
 
         response = client.get('/users?page=999')
         data = response.get_json()
@@ -123,9 +123,9 @@ class TestPagination:
         assert data['data']['users'] == []
         assert data['data']['total'] == 5
 
-    def test_limit_capped_at_100(self, client):
+    def test_limit_capped_at_100(self, client, auth_headers):
         """Limit above 100 is clamped to 100."""
-        _seed_users(client, 5)
+        _seed_users(client, auth_headers, 5)
 
         response = client.get('/users?limit=500')
         data = response.get_json()
@@ -137,7 +137,7 @@ class TestPagination:
 class TestSearchWithPagination:
     """Tests for combined search and pagination."""
 
-    def test_search_with_pagination(self, client):
+    def test_search_with_pagination(self, client, auth_headers):
         """Search and pagination work together — paginate the filtered set."""
         # Create 10 users with 'test' in the name and 5 without
         for i in range(1, 11):
@@ -145,13 +145,13 @@ class TestSearchWithPagination:
                 'name': f'Test User {i}',
                 'email': f'test{i}@example.com',
                 'role': 'user',
-            })
+            }, headers=auth_headers)
         for i in range(1, 6):
             client.post('/users', json={
                 'name': f'Other {i}',
                 'email': f'other{i}@example.com',
                 'role': 'admin',
-            })
+            }, headers=auth_headers)
 
         # Search for 'test' with page=2, limit=5
         response = client.get('/users?search=test&page=2&limit=5')
@@ -164,14 +164,14 @@ class TestSearchWithPagination:
         assert len(data['data']['users']) == 5
         assert data['data']['pages'] == 2
 
-    def test_search_with_pagination_partial_last_page(self, client):
+    def test_search_with_pagination_partial_last_page(self, client, auth_headers):
         """Last page of search results may have fewer items than limit."""
         for i in range(1, 8):
             client.post('/users', json={
                 'name': f'Match {i}',
                 'email': f'match{i}@example.com',
                 'role': 'user',
-            })
+            }, headers=auth_headers)
 
         response = client.get('/users?search=match&page=2&limit=5')
         data = response.get_json()

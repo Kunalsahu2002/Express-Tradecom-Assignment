@@ -4,7 +4,7 @@
 class TestGetUsers:
     """Tests for listing and retrieving users."""
 
-    def test_get_all_users(self, client):
+    def test_get_all_users(self, client, auth_headers):
         """GET /users returns all seeded users with correct total."""
         # Seed some users
         users_to_create = [
@@ -13,7 +13,7 @@ class TestGetUsers:
             {'name': 'Charlie', 'email': 'charlie@example.com', 'role': 'editor'},
         ]
         for user in users_to_create:
-            client.post('/users', json=user)
+            client.post('/users', json=user, headers=auth_headers)
 
         response = client.get('/users')
         data = response.get_json()
@@ -33,10 +33,10 @@ class TestGetUsers:
         assert data['data']['users'] == []
         assert data['data']['total'] == 0
 
-    def test_get_user_by_id(self, client, sample_user):
+    def test_get_user_by_id(self, client, sample_user, auth_headers):
         """GET /users/<id> returns the correct user object."""
         # Create a user first
-        create_resp = client.post('/users', json=sample_user)
+        create_resp = client.post('/users', json=sample_user, headers=auth_headers)
         user_id = create_resp.get_json()['data']['id']
 
         response = client.get(f'/users/{user_id}')
@@ -58,9 +58,9 @@ class TestGetUsers:
         assert data['success'] is False
         assert 'not found' in data['error'].lower()
 
-    def test_get_users_returns_pagination_metadata(self, client, sample_user):
+    def test_get_users_returns_pagination_metadata(self, client, sample_user, auth_headers):
         """GET /users response includes correct pagination metadata."""
-        client.post('/users', json=sample_user)
+        client.post('/users', json=sample_user, headers=auth_headers)
 
         response = client.get('/users')
         data = response.get_json()
@@ -72,3 +72,20 @@ class TestGetUsers:
         assert 'pages' in data['data']
         assert data['data']['page'] == 1
         assert data['data']['limit'] == 10
+
+    def test_get_users_no_auth_required(self, client, sample_user, auth_headers):
+        """GET /users does NOT require JWT — reads are public."""
+        client.post('/users', json=sample_user, headers=auth_headers)
+
+        # GET without auth headers should still work
+        response = client.get('/users')
+        assert response.status_code == 200
+
+    def test_get_user_by_id_no_auth_required(self, client, sample_user, auth_headers):
+        """GET /users/<id> does NOT require JWT — reads are public."""
+        create_resp = client.post('/users', json=sample_user, headers=auth_headers)
+        user_id = create_resp.get_json()['data']['id']
+
+        # GET without auth headers should still work
+        response = client.get(f'/users/{user_id}')
+        assert response.status_code == 200

@@ -7,6 +7,7 @@ No business logic, no direct DB access, no raw SQLAlchemy queries.
 """
 
 from flask import Blueprint, request
+from flask_jwt_extended import jwt_required
 
 from app.schemas.user_schema import UserSchema
 from app.services.user_service import UserService
@@ -17,6 +18,7 @@ user_schema = UserSchema()
 
 
 @users_bp.route('/users', methods=['POST'])
+@jwt_required()
 def create_user():
     """
     Create a new user.

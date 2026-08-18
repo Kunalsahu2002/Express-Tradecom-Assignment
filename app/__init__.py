@@ -12,7 +12,7 @@ from flask import Flask
 from dotenv import load_dotenv
 
 from app.config import config_by_name
-from app.extensions import db, migrate
+from app.extensions import db, migrate, jwt
 
 
 def create_app(config_name=None):
@@ -41,6 +41,7 @@ def create_app(config_name=None):
     # Initialize extensions
     db.init_app(app)
     migrate.init_app(app, db)
+    jwt.init_app(app)
 
     # Register blueprints
     _register_blueprints(app)
@@ -72,6 +73,9 @@ def _register_blueprints(app):
     from app.routes.user_routes import users_bp
     app.register_blueprint(users_bp)
 
+    from app.routes.auth_routes import auth_bp
+    app.register_blueprint(auth_bp)
+
 
 def _register_error_handlers(app):
     """Register centralized error handlers for custom domain exceptions and HTTP errors."""
@@ -102,3 +106,16 @@ def _register_error_handlers(app):
     def internal_error(error):
         app.logger.error(f'Internal server error: {error}')
         return error_response('Internal server error', 500)
+
+    # JWT-specific error handlers for consistent error envelope
+    @jwt.unauthorized_loader
+    def missing_token_callback(reason):
+        return error_response('Missing or invalid authorization token', 401)
+
+    @jwt.invalid_token_loader
+    def invalid_token_callback(reason):
+        return error_response('Invalid authorization token', 401)
+
+    @jwt.expired_token_loader
+    def expired_token_callback(jwt_header, jwt_payload):
+        return error_response('Authorization token has expired', 401)

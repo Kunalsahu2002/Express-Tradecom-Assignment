@@ -49,7 +49,22 @@ def sample_user():
 
 
 @pytest.fixture
-def create_sample_user(client, sample_user):
-    """Create a sample user and return the response data."""
-    response = client.post('/users', json=sample_user)
+def auth_headers(client):
+    """
+    Get JWT authorization headers by logging in with demo credentials.
+
+    Returns a dict with the Authorization: Bearer <token> header.
+    """
+    response = client.post('/auth/login', json={
+        'username': 'admin',
+        'password': 'password123',
+    })
+    token = response.get_json()['data']['access_token']
+    return {'Authorization': f'Bearer {token}'}
+
+
+@pytest.fixture
+def create_sample_user(client, sample_user, auth_headers):
+    """Create a sample user (with auth) and return the response data."""
+    response = client.post('/users', json=sample_user, headers=auth_headers)
     return response.get_json()['data']

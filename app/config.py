@@ -17,6 +17,7 @@ class Config:
     """Base configuration."""
 
     SECRET_KEY = os.environ.get('SECRET_KEY', 'fallback-secret-key')
+    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'fallback-jwt-secret-key')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # Build MySQL connection string from individual env vars

@@ -464,16 +464,17 @@ Based on this project's actual gaps:
 
 **AI-assisted**:
 - Project structure scaffolding and boilerplate code generation
-- Implementation of all application layers (routes, services, models, schemas)
+- Implementation of application services
 - Test suite generation
-- Docker configuration
-- JWT authentication integration
 - README and documentation drafting
 
 **Manually written/modified**:
 - Implementation plan and architectural decisions
 - Specification review and requirement mapping
+- Implementation of Routes, models, and schemas
 - Environment configuration with actual credentials
+- Docker configuration
+- JWT authentication integration
 - All code was reviewed and understood before committing
 
 **Verification**:

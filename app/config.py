@@ -6,12 +6,18 @@ from .env by python-dotenv). Nothing is hardcoded.
 """
 
 import os
+from urllib.parse import quote_plus
+from dotenv import load_dotenv
+
+# Load .env early so class-level attributes can read env vars at import time
+load_dotenv()
 
 
 class Config:
     """Base configuration."""
 
     SECRET_KEY = os.environ.get('SECRET_KEY', 'fallback-secret-key')
+    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'fallback-jwt-secret-key')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # Build MySQL connection string from individual env vars
@@ -22,7 +28,7 @@ class Config:
     DB_NAME = os.environ.get('DB_NAME', 'users')
 
     SQLALCHEMY_DATABASE_URI = (
-        f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}"
+        f"mysql+pymysql://{DB_USER}:{quote_plus(DB_PASSWORD)}"
         f"@{DB_HOST}:{DB_PORT}/{DB_NAME}"
     )
 
